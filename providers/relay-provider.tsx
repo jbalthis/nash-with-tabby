@@ -1,5 +1,5 @@
 "use client";
-import { SimplePool, Event } from "nostr-tools";
+import { SimplePool, Event, Relay } from "nostr-tools";
 import { useState, useEffect, createContext } from "react";
 import { set } from "zod";
 import axios, { AxiosResponse, AxiosError } from "axios";
@@ -25,7 +25,7 @@ export const RelayContext = createContext<any>({
 });
 
 export const RelayProvider = ({ children }: RelayProviderProps) => {
-  const [pool, setPool] = useState<[] | null>([]);
+  const [pool, setPool] = useState<string[]>(RELAYS);
   const [relay, setRelay] = useState<string | null>("wss://relayable.org");
   const [state, setState] = useState<"loading" | "error" | "done" | null>(null);
 

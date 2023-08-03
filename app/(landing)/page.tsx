@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { useSubscribe } from "nostr-hooks";
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { Loader } from "@/components/loader";
@@ -16,6 +16,7 @@ import { NetworkIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { RelayContext } from "@/providers/relay-provider";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Heading } from "@/components/heading";
@@ -24,16 +25,17 @@ import { formSchema } from "./constants";
 
 export default function Home() {
   const [state, setState] = useState<"loading" | "error" | "done" | null>(null);
-  const [relays, setRelays] = useState<[any]>();
 
-  useEffect(() => {
-    setState("loading");
-    axios
-      .get("/api/relays")
-      .then((response: AxiosResponse) => setRelays(response.data))
-      .then(() => setState("done"))
-      .catch((e: Error | AxiosError) => setState("error"));
-  }, []);
+  const { relay, pool, setRelay, setPool } = useContext(RelayContext);
+  const [relays, setRelays] = useState<[string]>(pool);
+  // useEffect(() => {
+  //   setState("loading");
+  //   axios
+  //     .get("/api/relays")
+  //     .then((response: AxiosResponse) => setPool(response.data))
+  //     .then(() => setState("done"))
+  //     .catch((e: Error | AxiosError) => setState("error"));
+  // }, []);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -43,7 +45,7 @@ export default function Home() {
     },
   });
 
-  if (!relays || state === "loading")
+  if (!pool || state === "loading")
     return (
       <div className="flex h-screen w-full items-center justify-center bg-stone-900 text-white">
         <Loader />
@@ -60,10 +62,8 @@ export default function Home() {
   const isLoading = form.formState.isSubmitting;
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    const connectRelay = async () => {
-      const relay = values.relay;
-      console.log("relay", relay);
-    };
+    console.log(values);
+    setRelay(values.relay);
   };
 
   return (
@@ -126,7 +126,7 @@ export default function Home() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="text-gray-400">
-                      {relays[0].map((option: any) => (
+                      {relays.map((option: string) => (
                         <SelectItem key={option} value={option}>
                           {option}
                         </SelectItem>
