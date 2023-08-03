@@ -26,12 +26,13 @@ import { formSchema } from "./constants";
 const SummarizationPage = () => {
   const router = useRouter();
   const proModal = useProModal();
-  const [messages, setMessages] = useState<ChatCompletionRequestMessage[]>([]);
+  const [text, setText] = useState<ChatCompletionRequestMessage[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      prompt: "",
+      text: "",
+      upload: ''
     },
   });
 
@@ -39,16 +40,16 @@ const SummarizationPage = () => {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      const userMessage: ChatCompletionRequestMessage = {
+      const userText: ChatCompletionRequestMessage = {
         role: "user",
-        content: values.prompt,
+        content: values.text,
       };
-      const newMessages = [...messages, userMessage];
+      const newText = [...text, userText];
 
-      const response = await axios.post("/api/conversation", {
-        messages: newMessages,
+      const response = await axios.post("/api/summarization", {
+        text: newText,
       });
-      setMessages((current) => [...current, userMessage, response.data]);
+      setText((current) => [...current, userText, response.data]);
 
       form.reset();
     } catch (error: any) {
@@ -65,8 +66,8 @@ const SummarizationPage = () => {
   return (
     <div>
       <Heading
-        title="Conversation"
-        description="Our most advanced conversation model."
+        title="Summarization"
+        description="Let our models summarize your notes, stories and other text."
         icon={MessageSquare}
         iconColor="text-violet-500"
         bgColor="bg-violet-500/10"
@@ -90,14 +91,30 @@ const SummarizationPage = () => {
               "
             >
               <FormField
-                name="prompt"
+                name="text"
                 render={({ field }) => (
                   <FormItem className="col-span-12 lg:col-span-10">
                     <FormControl className="m-0 p-0">
                       <Input
+                        type="text"
+                        className="border-0 outline-none focus-visible:ring-0 focus-visible:ring-transparent"
+                        placeholder="Paste or enter your text here or upload a file below"
+                        disabled={isLoading}
+                        {...field}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                name="upload"
+                render={({ field }) => (
+                  <FormItem className="col-span-12 lg:col-span-10">
+                    <FormControl className="m-0 p-0">
+                      <Input
+                        type="file"
                         className="border-0 outline-none focus-visible:ring-0 focus-visible:ring-transparent"
                         disabled={isLoading}
-                        placeholder="How do I calculate the radius of a circle?"
                         {...field}
                       />
                     </FormControl>
@@ -121,22 +138,22 @@ const SummarizationPage = () => {
               <Loader />
             </div>
           )}
-          {messages.length === 0 && !isLoading && (
-            <Empty label="No conversation started." />
+          {text.length === 0 && !isLoading && (
+            <Empty label="No text supplied." />
           )}
           <div className="flex flex-col-reverse gap-y-4">
-            {messages.map((message) => (
+            {text.map((text) => (
               <div
-                key={message.content}
+                key={text.content}
                 className={cn(
                   "p-8 w-full flex items-start gap-x-8 rounded-lg",
-                  message.role === "user"
+                  text.role === "user"
                     ? "bg-white border border-black/10"
                     : "bg-muted"
                 )}
               >
-                {message.role === "user" ? <UserAvatar /> : <BotAvatar />}
-                <p className="text-sm">{message.content}</p>
+                {text.role === "user" ? <UserAvatar /> : <BotAvatar />}
+                <p className="text-sm">{text.content}</p>
               </div>
             ))}
           </div>

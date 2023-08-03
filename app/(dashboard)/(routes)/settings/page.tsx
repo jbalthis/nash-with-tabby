@@ -8,6 +8,13 @@ import { Heading } from "@/components/heading";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Form,
   FormField,
   FormControl,
@@ -15,18 +22,28 @@ import {
   FormLabel,
 } from "@/components/ui/form";
 import { Settings } from "lucide-react";
-import axios from "axios";
-import { formSchema } from "./o-";
+import axios, { AxiosResponse, AxiosError } from "axios";
+import { formSchema } from "./constants";
 import { SimplePool } from "nostr-tools";
 import { RelayContext } from "@/providers/relay-provider";
 
 const SettingsPage = () => {
   //const [pk, setPk] = useState("");
-  const [settings, setSettings] = useState<any>({});
 
-  const relay = useContext<any>(RelayContext);
+  const [settings, setSettings] = useState<any>({});
+  const [state, setState] = useState<"loading" | "error" | "done" | null>(null);
+  const { pool, relay, setPool, setRelay } = useContext(RelayContext);
 
   const router = useRouter();
+
+  // useEffect(() => {
+  //   setState("loading");
+  //   axios
+  //     .get("/api/relays")
+  //     .then((response: AxiosResponse) => setPool(response.data))
+  //     .then(() => setState("done"))
+  //     .catch((e: Error | AxiosError) => setState("error"));
+  // }, []);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -36,25 +53,15 @@ const SettingsPage = () => {
     },
   });
 
-  // useEffect(() => {
-  //   const timer = setTimeout(() => {
-  //     setInputValue(form.getValues("pubkey"));
-  //   }, 1000);
-  // });
-
   const isLoading = form.formState.isSubmitting;
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    const _pool = new SimplePool();
-    setSettings({ relay: values.relay, pubkey: values.pubkey });
-    relay.setPool(_pool);
-    relay.pool.sub([values.relay], {
-      kinds: [1],
-      limit: 100,
-      //"#t": ["nostr"]
-    });
-    console.log(values.relay);
+    console.log(values);
   };
+
+  useEffect(() => {
+    if (!state) return setState("loading");
+  });
 
   return (
     <>
@@ -72,17 +79,17 @@ const SettingsPage = () => {
               <form
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="
-                rounded-lg
-                border
-                w-full
-                p-4
-                px-3
-                md:px-6
-                focus-within:shadow-sm
-                grid
-                grid-cols-12
-                gap-2
-              "
+                  rounded-lg
+                  border
+                  w-full
+                  p-4
+                  px-3
+                  md:px-6
+                  focus-within:shadow-sm
+                  grid
+                  grid-cols-12
+                  gap-2
+                "
               >
                 <h2 className="col-span-12 lg:col-span-10 text-center py-2 text-xl font-bold w-full">
                   Nostr Configuration
@@ -93,9 +100,11 @@ const SettingsPage = () => {
                     <FormItem className="col-span-12 lg:col-span-10">
                       <FormControl className="m-0 p-0">
                         <Input
-                          {...field}
+                          id="pubkey"
+                          type="text"
+                          name="pubkey"
                           //onSubmit={(e) => setInputValue(e.target.value)}
-                          //value={inputValue}
+                          //value={field.value}
                           disabled={isLoading}
                           placeholder="Public Key"
                           className="border-1 mb-4 px-2 outline focus-visible:ring-sky-500 focus-visible:ring-2"
@@ -105,17 +114,30 @@ const SettingsPage = () => {
                   )}
                 />
                 <FormField
+                  control={form.control}
                   name="relay"
                   render={({ field }) => (
-                    <FormItem className="col-span-12 lg:col-span-10">
-                      <FormControl className="m-0 p-0">
-                        <Input
-                          {...field}
-                          disabled={isLoading}
-                          placeholder="Relay"
-                          className="border-1 mb-2 outline px-2 focus-visible:ring-sky-500 focus-visible:ring-2"
-                        />
-                      </FormControl>
+                    <FormItem className="col-span-12 lg:col-span-2">
+                      <Select
+                        name="relay"
+                        disabled={isLoading}
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue defaultValue={field.value} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="text-gray-600">
+                          {pool.map((option: any) => (
+                            <SelectItem key={option} value={option}>
+                              {option}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </FormItem>
                   )}
                 />

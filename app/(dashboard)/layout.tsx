@@ -5,7 +5,7 @@ import { Sidebar } from "@/components/sidebar";
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className="relative h-full">
+    <div className="relative h-full pb-10">
       <div
         className="
           hidden
@@ -19,7 +19,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           bg-gray-900
         "
       >
-        <Sidebar />
+        <Sidebar apiLimitCount={0} isPro={true} />
       </div>
       <main className="md:pl-72">
         <Navbar />

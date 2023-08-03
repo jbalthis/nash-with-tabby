@@ -1,6 +1,8 @@
 "use client";
 import { SimplePool, Event } from "nostr-tools";
 import { useState, useEffect, createContext } from "react";
+import { set } from "zod";
+import axios, { AxiosResponse, AxiosError } from "axios";
 
 interface RelayProviderProps {
   children?: React.ReactNode;
@@ -15,10 +17,28 @@ export const RELAYS = [
 ];
 
 // @ts-ignore
-export const RelayContext = createContext<any>();
+export const RelayContext = createContext<any>({
+  pool: [],
+  setPool: () => [],
+  relay: "",
+  setRelay: () => "",
+});
 
 export const RelayProvider = ({ children }: RelayProviderProps) => {
-  const [pool, setPool] = useState<SimplePool | null>(null);
+  const [pool, setPool] = useState<[] | null>([]);
+  const [relay, setRelay] = useState<string | null>("wss://relayable.org");
+  const [state, setState] = useState<"loading" | "error" | "done" | null>(null);
+
+  useEffect(() => {
+    setState("loading");
+    axios
+      .get("/api/relays")
+      .then((response: AxiosResponse) => {
+        setPool(response.data);
+      })
+      .then(() => setState("done"))
+      .catch((e: Error | AxiosError) => setState("error"));
+  }, []);
 
   // setup relay pool
 
@@ -55,7 +75,7 @@ export const RelayProvider = ({ children }: RelayProviderProps) => {
   // }, [pool]);
 
   return (
-    <RelayContext.Provider value={{ pool, setPool }}>
+    <RelayContext.Provider value={{ pool, setPool, relay, setRelay }}>
       {children}
     </RelayContext.Provider>
   );
